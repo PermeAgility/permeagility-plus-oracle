@@ -4,6 +4,7 @@ package permeagility.plus.oracle;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
+import permeagility.util.Database;
 import permeagility.util.DatabaseConnection;
 import permeagility.web.Message;
 import permeagility.web.Server;
@@ -381,26 +382,26 @@ public class OracleImporter extends Table {
 		}
 		OSchema oschema = con.getSchema();
 		
-		OClass table = checkCreateClass(oschema, TABLE, errors);
-		checkCreateProperty(table, "name", OType.STRING, errors);
-		checkCreateProperty(table, "databaseURL", OType.STRING, errors);
-		checkCreateProperty(table, "user", OType.STRING, errors);
-		checkCreateProperty(table, "password", OType.STRING, errors);
+		OClass table = Database.checkCreateClass(oschema, TABLE, errors);
+		Database.checkCreateProperty(table, "name", OType.STRING, errors);
+		Database.checkCreateProperty(table, "databaseURL", OType.STRING, errors);
+		Database.checkCreateProperty(table, "user", OType.STRING, errors);
+		Database.checkCreateProperty(table, "password", OType.STRING, errors);
 		
-		OClass logTable = checkCreateClass(oschema, LOGTABLE, errors);
-		checkCreateProperty(logTable, "connection", OType.LINK, table, errors);
-		checkCreateProperty(logTable, "schema", OType.STRING, errors);
-		checkCreateProperty(logTable, "table", OType.STRING, errors);
-		checkCreateProperty(logTable, "className", OType.STRING, errors);
-		checkCreateProperty(logTable, "created", OType.DATETIME, errors);
-		checkCreateProperty(logTable, "executed", OType.DATETIME, errors);
+		OClass logTable = Database.checkCreateClass(oschema, LOGTABLE, errors);
+		Database.checkCreateProperty(logTable, "connection", OType.LINK, table, errors);
+		Database.checkCreateProperty(logTable, "schema", OType.STRING, errors);
+		Database.checkCreateProperty(logTable, "table", OType.STRING, errors);
+		Database.checkCreateProperty(logTable, "className", OType.STRING, errors);
+		Database.checkCreateProperty(logTable, "created", OType.DATETIME, errors);
+		Database.checkCreateProperty(logTable, "executed", OType.DATETIME, errors);
 
-		OClass sqlTable = checkCreateClass(oschema, SQLTABLE, errors);
-		checkCreateProperty(sqlTable, "connection", OType.LINK, table, errors);
-		checkCreateProperty(sqlTable, "SQL", OType.STRING, errors);
-		checkCreateProperty(sqlTable, "className", OType.STRING, errors);
-		checkCreateProperty(sqlTable, "created", OType.DATETIME, errors);
-		checkCreateProperty(sqlTable, "executed", OType.DATETIME, errors);
+		OClass sqlTable = Database.checkCreateClass(oschema, SQLTABLE, errors);
+		Database.checkCreateProperty(sqlTable, "connection", OType.LINK, table, errors);
+		Database.checkCreateProperty(sqlTable, "SQL", OType.STRING, errors);
+		Database.checkCreateProperty(sqlTable, "className", OType.STRING, errors);
+		Database.checkCreateProperty(sqlTable, "created", OType.DATETIME, errors);
+		Database.checkCreateProperty(sqlTable, "executed", OType.DATETIME, errors);
 
 		INSTALLED = true;  //This will be checked every startup unless this flag is set true using a constant
 	}
