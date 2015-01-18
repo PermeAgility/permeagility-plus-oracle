@@ -4,26 +4,17 @@ package permeagility.plus.oracle;
 import java.util.HashMap;
 import java.util.concurrent.ConcurrentHashMap;
 
-import permeagility.util.Database;
 import permeagility.util.DatabaseConnection;
+import permeagility.util.Setup;
 import permeagility.web.Message;
 import permeagility.web.Server;
 import permeagility.web.Table;
 
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OSchema;
-import com.orientechnologies.orient.core.metadata.schema.OType;
 import com.orientechnologies.orient.core.record.impl.ODocument;
 
 public class OracleImporter extends Table {
-
-	// Override this with a constant to true after installation to avoid installation check
-	public static boolean INSTALLED = false;  // Will check for existence of config tables and create - can turn off in constant
-
-	// Override these to change the names of the tables that will be created and used by this importer
-	public static String TABLE = "importedOracle";   // Local OrientDB table name to hold connection specs
-	public static String LOGTABLE = "importedOraclePath";   // Saved path from a Oracle schema.table to a PermeAgility class/table
-	public static String SQLTABLE = "importedOracleSQL";   // Saved sql from a Oracle import to a PermeAgility class/table
     
     static ConcurrentHashMap<String,RDatabase> cachedConnections = new ConcurrentHashMap<String,RDatabase>();
  
@@ -31,11 +22,8 @@ public class OracleImporter extends Table {
 	public String getPage(DatabaseConnection con, HashMap<String, String> parms) {
 	
 		StringBuilder sb = new StringBuilder();
-		StringBuffer errors = new StringBuffer();
+		StringBuilder errors = new StringBuilder();
 
-		if (!INSTALLED) {
-			checkInstallation(con, errors);
-		}
 		String submit = parms.get("SUBMIT");
 		String connect = parms.get("CONNECT");
 		String schema = parms.get("SCHEMA");
@@ -91,14 +79,14 @@ public class OracleImporter extends Table {
 				if (deleteRow(con, tableName, parms, errors)) {
 					submit = null;
 				} else {
-					return head("Could not delete")
+					return head("Could not delete", getDateControlScript(con.getLocale())+getColorControlScript())
 							+ body(standardLayout(con, parms, getTableRowForm(con, tableName, parms) + errors.toString()));
 				}
 			} else if (submit.equals(Message.get(con.getLocale(), "UPDATE"))) {
 				System.out.println("In updating row");
 				if (updateRow(con, tableName, parms, errors)) {
 				} else {
-					return head("Could not update", getDateControlScript()+getColorControlScript()+getPrettyPhotoScript()+getAngularControlScript())
+					return head("Could not update", getDateControlScript(con.getLocale())+getColorControlScript())
 							+ body(standardLayout(con, parms, getTableRowForm(con, tableName, parms) + errors.toString()));
 				}
 			} 
@@ -120,7 +108,7 @@ public class OracleImporter extends Table {
 		// Show edit form if row selected for edit
 		if (editId != null && submit == null && connect == null) {
 			table = tableName;
-			return head("Edit", getDateControlScript()+getColorControlScript()+getPrettyPhotoScript()+getAngularControlScript())
+			return head("Edit", getDateControlScript(con.getLocale())+getColorControlScript())
 					+ body(standardLayout(con, parms, getTableRowForm(con, table, parms)));
 		}
 		
@@ -142,7 +130,7 @@ public class OracleImporter extends Table {
 						cachedConnections.put(connect,db);
 					}
 					if (db != null && db.isConnected()) {
-						StringBuffer sbs = new StringBuffer();
+						StringBuilder sbs = new StringBuilder();
 						dbc = db.getConnection();
 						errors.append(paragraph("success","Connected to Oracle database "+connectDoc.field("name")));
 						if (schema == null || schema.equals("")) {
@@ -158,25 +146,25 @@ public class OracleImporter extends Table {
 									,"window.location.href='" + this.getClass().getName()
 										+"?CONNECT=" + connect + "&SCHEMA="+row.get("OWNER").toString() + "';"));
 							}
-							sb.append(table(0,row(tableHead("Owner")+tableHead("Table Count"))+sbs.toString()));
+							sb.append(table(0,row(columnHeader("Owner")+columnHeader("Table Count"))+sbs.toString()));
 							sb.append(br());
 
 							sb.append(paragraph("or run a previous table import"));
-							sb.append(getTable(con,LOGTABLE,"SELECT FROM "+LOGTABLE+" WHERE connection=#"+connect,"connection",0, "button(RUNLOG:Run), className, schema, table, created, executed"));
+							sb.append(getTable(con,parms,PlusSetup.LOGTABLE,"SELECT FROM "+PlusSetup.LOGTABLE+" WHERE connection=#"+connect,"connection",0, "button(RUNLOG:Run), className, schema, table, created, executed"));
 
 							parms.put("FORCE_connection", connect);  // sets foreign key for this connection (used by getTableRowFields)
 
 							sb.append(paragraph("banner","Create a SQL import"));
-							if ((Server.getTablePriv(con, SQLTABLE) & PRIV_CREATE) > 0) {
+							if ((Server.getTablePriv(con, PlusSetup.SQLTABLE) & PRIV_CREATE) > 0) {
 								sb.append(form("CREATE_NEW_ROW",
 									 hidden("CONNECT", connect)
-									+hidden("TABLENAME", SQLTABLE)
-									+getTableRowFields(con, SQLTABLE, parms, "SQL, className, -created, -executed")
+									+hidden("TABLENAME", PlusSetup.SQLTABLE)
+									+getTableRowFields(con, PlusSetup.SQLTABLE, parms, "SQL, className, -created, -executed")
 									+submitButton(Message.get(con.getLocale(), "CREATE_ROW"))
 								));
 							}							
 							sb.append(br()+br()+paragraph("or run a saved SQL import"));
-							sb.append(getTable(con,SQLTABLE,"SELECT FROM "+SQLTABLE+" WHERE connection=#"+connect,"connection",0, "button(RUNSQL:Run), className, SQL, created, executed"));
+							sb.append(getTable(con,parms,PlusSetup.SQLTABLE,"SELECT FROM "+PlusSetup.SQLTABLE+" WHERE connection=#"+connect,"connection",0, "button(RUNSQL:Run), className, SQL, created, executed"));
 
 						} else if (table == null || table.equals("")) {
 				    		parms.put("SERVICE", "OracleImporter: Select table to import");
@@ -195,10 +183,10 @@ public class OracleImporter extends Table {
 									,"window.location.href='" + this.getClass().getName() + "?CONNECT=" + connect 
 									+ "&SCHEMA="+schema+"&TABLE="+row.get("TABLE_NAME").toString() + "';"));
 							}
-							sb.append(table(0,row(tableHead("Table Name")
-										+tableHead("Num Rows")
-										+tableHead("Avg Row Len")
-										+tableHead("Last Analyzed"))+sbs.toString()));														
+							sb.append(table(0,row(columnHeader("Table Name")
+										+columnHeader("Num Rows")
+										+columnHeader("Avg Row Len")
+										+columnHeader("Last Analyzed"))+sbs.toString()));														
 						} else {
 							boolean create = false;
 							if (go != null && go.equals("YES")) {
@@ -254,7 +242,7 @@ public class OracleImporter extends Table {
 									} else {
 										errors.append(paragraph("warning","Column "+colName+" has no data and will not be imported"));										
 									}
-									sbth.append(tableHead(colName
+									sbth.append(columnHeader(colName
 											+"<BR>"
 											+(o == null ? "no data" : o.getClass().getName())
 											+"<BR>"
@@ -267,7 +255,8 @@ public class OracleImporter extends Table {
 								if (create && cls != null && colTypes.size() > 0) {
 									for (String cn : colTypes.keySet()) {
 										String ct = colTypes.get(cn);
-										cls.createProperty(makePrettyCamelCase(cn), qr.determineOTypeFromClassName(ct));
+										
+										Setup.checkCreateProperty(con, cls, makePrettyCamelCase(cn), qr.determineOTypeFromClassName(ct), errors);
 									}
 								}
 
@@ -312,7 +301,7 @@ public class OracleImporter extends Table {
 			    								System.out.println("ImportLog executed date updated");
 			    							}
 			    						} else {
-					    					ODocument importLog = con.create(LOGTABLE);
+					    					ODocument importLog = con.create(PlusSetup.LOGTABLE);
 					    					if (importLog != null) {
 					    						importLog.field("schema",schema);
 					    						importLog.field("table",table);
@@ -320,7 +309,7 @@ public class OracleImporter extends Table {
 					    						importLog.field("className",newTableName);
 					    						importLog.field("created",new java.util.Date());
 					    						importLog.save();
-												errors.append(paragraph("success","Import saved in "+LOGTABLE));
+												errors.append(paragraph("success","Import saved in "+PlusSetup.LOGTABLE));
 					    					}
 			    						}
 			    					} else {
@@ -358,7 +347,7 @@ public class OracleImporter extends Table {
 	    	try {
 	    		parms.put("SERVICE", "OracleImporter: Setup/Select Oracle connection");
 				sb.append(paragraph("banner","Select Oracle Connection"));
-				sb.append(getTable(con,TABLE,"SELECT FROM "+TABLE, null,0, "button(CONNECT:Connect), name, databaseURL, user"));
+				sb.append(getTable(con,parms,PlusSetup.TABLE,"SELECT FROM "+PlusSetup.TABLE, null,0, "button(CONNECT:Connect), name, databaseURL, user"));
 	    	} catch (Exception e) {  
 	    		e.printStackTrace();
 	    		sb.append("Error retrieving import patterns: "+e.getMessage());
@@ -367,43 +356,12 @@ public class OracleImporter extends Table {
 		return 	head("Context")+body(standardLayout(con, parms, 
 				errors.toString()
 				+sb.toString()
-				+((Server.getTablePriv(con, TABLE) & PRIV_CREATE) > 0 && connect == null ? popupForm("CREATE_NEW_ROW",null,Message.get(con.getLocale(),"NEW_CONNECTION"),null,"NAME",
+				+((Server.getTablePriv(con, PlusSetup.TABLE) & PRIV_CREATE) > 0 && connect == null ? popupForm("CREATE_NEW_ROW",null,Message.get(con.getLocale(),"NEW_CONNECTION"),null,"NAME",
 						paragraph("banner",Message.get(con.getLocale(), "CREATE_ROW"))
-						+hidden("TABLENAME", TABLE)
-						+getTableRowFields(con, TABLE, parms)
+						+hidden("TABLENAME", PlusSetup.TABLE)
+						+getTableRowFields(con, PlusSetup.TABLE, parms)
 						+submitButton(Message.get(con.getLocale(), "CREATE_ROW"))) : "")
 				));
-	}
-
-	private void checkInstallation(DatabaseConnection con, StringBuffer errors) {
-		// Verify the installation of the OracleImporter table structures
-		if (!Server.isDBA(con)) {
-			return;
-		}
-		OSchema oschema = con.getSchema();
-		
-		OClass table = Database.checkCreateClass(oschema, TABLE, errors);
-		Database.checkCreateProperty(table, "name", OType.STRING, errors);
-		Database.checkCreateProperty(table, "databaseURL", OType.STRING, errors);
-		Database.checkCreateProperty(table, "user", OType.STRING, errors);
-		Database.checkCreateProperty(table, "password", OType.STRING, errors);
-		
-		OClass logTable = Database.checkCreateClass(oschema, LOGTABLE, errors);
-		Database.checkCreateProperty(logTable, "connection", OType.LINK, table, errors);
-		Database.checkCreateProperty(logTable, "schema", OType.STRING, errors);
-		Database.checkCreateProperty(logTable, "table", OType.STRING, errors);
-		Database.checkCreateProperty(logTable, "className", OType.STRING, errors);
-		Database.checkCreateProperty(logTable, "created", OType.DATETIME, errors);
-		Database.checkCreateProperty(logTable, "executed", OType.DATETIME, errors);
-
-		OClass sqlTable = Database.checkCreateClass(oschema, SQLTABLE, errors);
-		Database.checkCreateProperty(sqlTable, "connection", OType.LINK, table, errors);
-		Database.checkCreateProperty(sqlTable, "SQL", OType.STRING, errors);
-		Database.checkCreateProperty(sqlTable, "className", OType.STRING, errors);
-		Database.checkCreateProperty(sqlTable, "created", OType.DATETIME, errors);
-		Database.checkCreateProperty(sqlTable, "executed", OType.DATETIME, errors);
-
-		INSTALLED = true;  //This will be checked every startup unless this flag is set true using a constant
 	}
 
 }
