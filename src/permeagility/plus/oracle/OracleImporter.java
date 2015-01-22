@@ -256,7 +256,7 @@ public class OracleImporter extends Table {
 									for (String cn : colTypes.keySet()) {
 										String ct = colTypes.get(cn);
 										
-										Setup.checkCreateProperty(con, cls, makePrettyCamelCase(cn), qr.determineOTypeFromClassName(ct), errors);
+										Setup.checkCreateColumn(con, cls, makePrettyCamelCase(cn), qr.determineOTypeFromClassName(ct), errors);
 									}
 								}
 

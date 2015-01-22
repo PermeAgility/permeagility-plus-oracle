@@ -4,6 +4,7 @@ import java.util.HashMap;
 
 import permeagility.util.DatabaseConnection;
 import permeagility.util.Setup;
+import permeagility.web.Server;
 
 import com.orientechnologies.orient.core.metadata.schema.OClass;
 import com.orientechnologies.orient.core.metadata.schema.OSchema;
@@ -23,7 +24,7 @@ public class PlusSetup extends permeagility.plus.PlusSetup {
 	
 	public String getName() { return "Import Oracle"; }
 	public String getInfo() { return "Import data from Oracle database into tables"; }
-	public String getVersion() { return "0.2.3"; }
+	public String getVersion() { return "0.1.0"; }
 	
 	public boolean isInstalled() { return INSTALLED; }
 	
@@ -36,63 +37,54 @@ public class PlusSetup extends permeagility.plus.PlusSetup {
 			return false;
 		}
 
-		// Setup tables
-		OClass table = Setup.checkCreateClass(con, oschema, TABLE, errors, newTableGroup);
-		Setup.checkCreateProperty(con,table, "name", OType.STRING, errors);
-		Setup.checkCreateProperty(con,table, "databaseURL", OType.STRING, errors);
-		Setup.checkCreateProperty(con,table, "user", OType.STRING, errors);
-		Setup.checkCreateProperty(con,table, "password", OType.STRING, errors);
+		OClass table = Setup.checkCreateTable(con, oschema, TABLE, errors, newTableGroup);
+		Setup.checkCreateColumn(con,table, "name", OType.STRING, errors);
+		Setup.checkCreateColumn(con,table, "databaseURL", OType.STRING, errors);
+		Setup.checkCreateColumn(con,table, "user", OType.STRING, errors);
+		Setup.checkCreateColumn(con,table, "password", OType.STRING, errors);
 		
-		OClass logTable = Setup.checkCreateClass(con, oschema, LOGTABLE, errors, newTableGroup);
-		Setup.checkCreateProperty(con,logTable, "connection", OType.LINK, table, errors);
-		Setup.checkCreateProperty(con,logTable, "schema", OType.STRING, errors);
-		Setup.checkCreateProperty(con,logTable, "table", OType.STRING, errors);
-		Setup.checkCreateProperty(con,logTable, "className", OType.STRING, errors);
-		Setup.checkCreateProperty(con,logTable, "created", OType.DATETIME, errors);
-		Setup.checkCreateProperty(con,logTable, "executed", OType.DATETIME, errors);
+		OClass logTable = Setup.checkCreateTable(con, oschema, LOGTABLE, errors, newTableGroup);
+		Setup.checkCreateColumn(con,logTable, "connection", OType.LINK, table, errors);
+		Setup.checkCreateColumn(con,logTable, "schema", OType.STRING, errors);
+		Setup.checkCreateColumn(con,logTable, "table", OType.STRING, errors);
+		Setup.checkCreateColumn(con,logTable, "className", OType.STRING, errors);
+		Setup.checkCreateColumn(con,logTable, "created", OType.DATETIME, errors);
+		Setup.checkCreateColumn(con,logTable, "executed", OType.DATETIME, errors);
 
-		OClass sqlTable = Setup.checkCreateClass(con, oschema, SQLTABLE, errors, newTableGroup);
-		Setup.checkCreateProperty(con,sqlTable, "connection", OType.LINK, table, errors);
-		Setup.checkCreateProperty(con,sqlTable, "SQL", OType.STRING, errors);
-		Setup.checkCreateProperty(con,sqlTable, "className", OType.STRING, errors);
-		Setup.checkCreateProperty(con,sqlTable, "created", OType.DATETIME, errors);
-		Setup.checkCreateProperty(con,sqlTable, "executed", OType.DATETIME, errors);
+		OClass sqlTable = Setup.checkCreateTable(con, oschema, SQLTABLE, errors, newTableGroup);
+		Setup.checkCreateColumn(con,sqlTable, "connection", OType.LINK, table, errors);
+		Setup.checkCreateColumn(con,sqlTable, "SQL", OType.STRING, errors);
+		Setup.checkCreateColumn(con,sqlTable, "className", OType.STRING, errors);
+		Setup.checkCreateColumn(con,sqlTable, "created", OType.DATETIME, errors);
+		Setup.checkCreateColumn(con,sqlTable, "executed", OType.DATETIME, errors);
+		Server.clearColumnsCache(TABLE);
+		Server.clearColumnsCache(LOGTABLE);
+		Server.clearColumnsCache(SQLTABLE);
 
-		// Setup menu
 		Setup.createMenuItem(con,getName(),getInfo(),MENU_CLASS,parms.get("MENU"),parms.get("ROLES"));	
 		
-		// Set the installed constant  INSTALLED=true
-		Setup.checkCreateConstant(con,this.getClass().getName(),getInfo(),"INSTALLED","true");
-		Setup.checkCreateConstant(con,this.getClass().getName(),getInfo(),"INSTALLED_VERSION",getVersion());
+		setPlusInstalled(con, this.getClass().getName(), getInfo(), getVersion());
 		INSTALLED = true;
 		return true;
 	}
 	
 	public boolean remove(DatabaseConnection con, HashMap<String,String> parms, StringBuilder errors) {
 
-		// Remove from menu
 		if (parms.get("REMOVE_MENU") != null) {
 			Setup.removeMenuItem(con, MENU_CLASS, errors);
 		}
 		
-		// If specified, remove tables
 		String remTab = parms.get("REMOVE_TABLES");
 		if (remTab != null && remTab.equals("on")) {
-			OSchema schema = con.getSchema();
-			schema.dropClass(TABLE);
-			errors.append(paragraph("error","Table dropped: "+TABLE));
-			Setup.removeTableFromAllTableGroups(con, TABLE);
-			schema.dropClass(LOGTABLE);
-			errors.append(paragraph("error","Table dropped: "+LOGTABLE));
-			Setup.removeTableFromAllTableGroups(con, LOGTABLE);
-			schema.dropClass(SQLTABLE);
-			errors.append(paragraph("error","Table dropped: "+SQLTABLE));
-			Setup.removeTableFromAllTableGroups(con, SQLTABLE);
+			Setup.dropTable(con, TABLE);
+			errors.append(paragraph("success","Table dropped: "+TABLE));
+			Setup.dropTable(con, LOGTABLE);
+			errors.append(paragraph("success","Table dropped: "+LOGTABLE));
+			Setup.dropTable(con, SQLTABLE);
+			errors.append(paragraph("success","Table dropped: "+SQLTABLE));
 		}
 
-		// Remove the installed constant  permeagility.plus.xlsx.PlusSetup INSTALLED true
-		Object ret2 = con.update("DELETE FROM "+Setup.TABLE_CONSTANT+" WHERE classname='"+this.getClass().getName()+"'");
-		errors.append(paragraph("error","Delete INSTALLED and INSTALLED_VERSION constant "+ret2));
+		setPlusUninstalled(con, this.getClass().getName());
 		INSTALLED = false;
 		return true;
 	}
@@ -100,10 +92,8 @@ public class PlusSetup extends permeagility.plus.PlusSetup {
 	public boolean upgrade(DatabaseConnection con, HashMap<String,String> parms, StringBuilder errors) {
 		// Perform upgrade actions
 				
-		// Then update the version constant
-		Setup.checkCreateConstant(con,this.getClass().getName(),getInfo(),"INSTALLED_VERSION",getVersion());	
+		setPlusVersion(con,this.getClass().getName(),getInfo(),getVersion());
 		return true;
 	}
-
 
 }
