@@ -143,8 +143,7 @@ public class OracleImporter extends Table {
 								sbs.append(rowOnClick("clickable",
 										column(row.get("OWNER").toString())
 										+column(row.get("TABLE_COUNT").toString())
-									,"window.location.href='" + this.getClass().getName()
-										+"?CONNECT=" + connect + "&SCHEMA="+row.get("OWNER").toString() + "';"));
+									, this.getClass().getName()+"?CONNECT=" + connect + "&SCHEMA="+row.get("OWNER").toString()));
 							}
 							sb.append(table(0,row(columnHeader("Owner")+columnHeader("Table Count"))+sbs.toString()));
 							sb.append(br());
@@ -180,8 +179,7 @@ public class OracleImporter extends Table {
 										+column(numRows == null ? "-" : numRows.toString())
 										+column(rowLen == null ? "-" : rowLen.toString())
 										+column(lastAnal == null ? "-" : lastAnal.toString())
-									,"window.location.href='" + this.getClass().getName() + "?CONNECT=" + connect 
-									+ "&SCHEMA="+schema+"&TABLE="+row.get("TABLE_NAME").toString() + "';"));
+									,this.getClass().getName() + "?CONNECT=" + connect + "&SCHEMA="+schema+"&TABLE="+row.get("TABLE_NAME").toString()));
 							}
 							sb.append(table(0,row(columnHeader("Table Name")
 										+columnHeader("Num Rows")
