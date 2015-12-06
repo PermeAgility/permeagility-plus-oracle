@@ -57,9 +57,6 @@ public class PlusSetup extends permeagility.plus.PlusSetup {
 		Setup.checkCreateColumn(con,sqlTable, "className", OType.STRING, errors);
 		Setup.checkCreateColumn(con,sqlTable, "created", OType.DATETIME, errors);
 		Setup.checkCreateColumn(con,sqlTable, "executed", OType.DATETIME, errors);
-		Server.clearColumnsCache(TABLE);
-		Server.clearColumnsCache(LOGTABLE);
-		Server.clearColumnsCache(SQLTABLE);
 
 		Setup.createMenuItem(con,getName(),getInfo(),MENU_CLASS,parms.get("MENU"),parms.get("ROLES"));	
 		

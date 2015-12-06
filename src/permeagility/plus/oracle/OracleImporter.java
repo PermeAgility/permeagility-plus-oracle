@@ -7,7 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import permeagility.util.DatabaseConnection;
 import permeagility.util.Setup;
 import permeagility.web.Message;
-import permeagility.web.Server;
+import permeagility.web.Security;
 import permeagility.web.Table;
 
 import com.orientechnologies.orient.core.metadata.schema.OClass;
@@ -154,7 +154,7 @@ public class OracleImporter extends Table {
 							parms.put("FORCE_connection", connect);  // sets foreign key for this connection (used by getTableRowFields)
 
 							sb.append(paragraph("banner","Create a SQL import"));
-							if ((Server.getTablePriv(con, PlusSetup.SQLTABLE) & PRIV_CREATE) > 0) {
+							if ((Security.getTablePriv(con, PlusSetup.SQLTABLE) & PRIV_CREATE) > 0) {
 								sb.append(form("CREATE_NEW_ROW",
 									 hidden("CONNECT", connect)
 									+hidden("TABLENAME", PlusSetup.SQLTABLE)
@@ -354,7 +354,7 @@ public class OracleImporter extends Table {
 		return 	head("Context")+body(standardLayout(con, parms, 
 				errors.toString()
 				+sb.toString()
-				+((Server.getTablePriv(con, PlusSetup.TABLE) & PRIV_CREATE) > 0 && connect == null ? popupForm("CREATE_NEW_ROW",null,Message.get(con.getLocale(),"NEW_CONNECTION"),null,"NAME",
+				+((Security.getTablePriv(con, PlusSetup.TABLE) & PRIV_CREATE) > 0 && connect == null ? popupForm("CREATE_NEW_ROW",null,Message.get(con.getLocale(),"NEW_CONNECTION"),null,"NAME",
 						paragraph("banner",Message.get(con.getLocale(), "CREATE_ROW"))
 						+hidden("TABLENAME", PlusSetup.TABLE)
 						+getTableRowFields(con, PlusSetup.TABLE, parms)
