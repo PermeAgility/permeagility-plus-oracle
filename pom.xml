@@ -103,7 +103,8 @@
             </exclusions>
             <scope>provided</scope>
         </dependency>
-                                
+             
+        <!-- get ojdbc6.jar from Oracle and run the command below  -->
         <!-- mvn install:install-file -Dfile=ojdbc6.jar -DgroupId=oracle -DartifactId=ojdbc6 -Dversion=2 -Dpackaging=jar -->
         <dependency>
             <groupId>oracle</groupId>

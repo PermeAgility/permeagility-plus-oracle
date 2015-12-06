@@ -97,7 +97,7 @@ public class OracleImporter extends Table {
 		}
 
 		// Create a SQL import directly - set the created date
-		if (submit != null && submit.equals(Message.get(con.getLocale(), "CREATE_ROW"))) {
+		if (submit != null && submit.equals("CREATE_ROW")) {
 			parms.put(PARM_PREFIX+"created", formatDate(con.getLocale(), new java.util.Date(), "yyyy-MM-dd HH:mm:ss"));
 			boolean inserted = insertRow(con,tableName,parms,errors);
 			if (!inserted) {
@@ -159,7 +159,7 @@ public class OracleImporter extends Table {
 									 hidden("CONNECT", connect)
 									+hidden("TABLENAME", PlusSetup.SQLTABLE)
 									+getTableRowFields(con, PlusSetup.SQLTABLE, parms, "SQL, className, -created, -executed")
-									+submitButton(Message.get(con.getLocale(), "CREATE_ROW"))
+									+submitButton(con.getLocale(), "CREATE_ROW")
 								));
 							}							
 							sb.append(br()+br()+paragraph("or run a saved SQL import"));
@@ -358,7 +358,7 @@ public class OracleImporter extends Table {
 						paragraph("banner",Message.get(con.getLocale(), "CREATE_ROW"))
 						+hidden("TABLENAME", PlusSetup.TABLE)
 						+getTableRowFields(con, PlusSetup.TABLE, parms)
-						+submitButton(Message.get(con.getLocale(), "CREATE_ROW"))) : "")
+						+submitButton(con.getLocale(), "CREATE_ROW")) : "")
 				));
 	}
 
