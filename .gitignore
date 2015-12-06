@@ -2,4 +2,6 @@
 /db/
 /nbproject/
 /target
-/lib/ojdbc6.jar
+/lib
+.project
+/bin
